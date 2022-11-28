@@ -75,12 +75,22 @@ const List = ({navigation}) => {
       start_page: dd,
       pages: 25,
     });
+    console.log('reqSuccess')
     setLoading(false);
     let listData = data.concat(result.data);
     setData(listData);
     if (listData.length >= result.total_page * 1) {
       setFinish(true);
     }
+  };
+  const reFresh=()=>{
+    setFinish(false)
+    setPage(-1);
+    setData([])
+    setKeyWord('')
+    setTimeout(()=>{
+      fetchData()
+    },500)
   };
   const onLoad = () => {
     fetchData();
@@ -104,9 +114,16 @@ const List = ({navigation}) => {
   };
   const renderItem = ({item}) => {
     return (
-      <View style={styles.item}>
-        <Text>{item.title}</Text>
-      </View>
+      <TouchableHighlight onPress={() =>
+          navigation.navigate('Detail', {
+            id: item.id,
+            otherParam: item.title,
+          })
+        }>
+        <View style={styles.item}>
+          <Text>{item.title}</Text>
+        </View>        
+      </TouchableHighlight>
     );
   };
   return (
@@ -124,6 +141,13 @@ const List = ({navigation}) => {
         </TouchableHighlight>
       </View>
       <View style={styles.tabs}>
+        <TouchableHighlight onPress={() => reFresh()}>
+            <View style={styles.tab}>
+              <Text>
+                全部
+              </Text>
+            </View>
+          </TouchableHighlight>
         {Object.keys(tab).map(key => {
           return (
             <TouchableHighlight key={key} onPress={() => tabSearch(key)}>
