@@ -1,15 +1,27 @@
-import {Text, View, Button} from 'react-native';
-import {useEffect,useState} from 'react';
-import { httpNet } from '../utils/request'
-export function List({navigation}) {
+import {
+  Text,
+  View,
+  Button,
+  FlatList,
+  SafeAreaView,
+  StyleSheet,
+  StatusBar,
+  ToastAndroid,
+} from 'react-native';
+import {useEffect, useState} from 'react';
+import {httpNet} from '../utils/request';
+
+const List = ({navigation}) => {
   const [isLoading, setLoading] = useState(true);
+  const [isFinish, setFinish] = useState(false);
+  const [start_page, setPage] = useState(-1);
   const [data, setData] = useState([]);
 
   let _focus = navigation.addListener('focus', () => {
-    // console.log('iamIn');
+    console.log('RouterIn');
   });
   navigation.addListener('blur', () => {
-    console.log('iamLeave');
+    console.log('RouterLeave');
   });
   useEffect(() => {
     return () => {
@@ -18,39 +30,58 @@ export function List({navigation}) {
   });
   useEffect(() => {
     console.log('DidMount');
-    setLoading(true)
-    const fetchData=async ()=>{
-      const result = await httpNet('/upload/BlogList.php',{"start_page":0,"pages":25})
-      setLoading(false)
-      setData(result.data);
-      console.log(result.data)
-      console.log('`````````````````````````````````````')
-      console.log(data)
-    }
-    fetchData()
+    setLoading(true);
+    fetchData();
   }, []);
-  const renderItem=(data)=>{
-    return(
-      <View>
-        <Text>123</Text>
-        <Text>{data}</Text>
+  const fetchData = async () => {
+    if (isFinish) {
+      ToastAndroid.show('没有更多了!', ToastAndroid.SHORT);
+      return false;
+    }
+    let dd = start_page;
+    dd++;
+    setPage(dd);
+    console.log('start_pagestart_pagestart_page', dd);
+    ToastAndroid.show('加载中', ToastAndroid.SHORT);
+    const result = await httpNet('/upload/BlogList.php', {
+      start_page: dd,
+      pages: 25,
+    });
+    setLoading(false);
+    let listData = data.concat(result.data);
+    setData(listData);
+    if (listData.length >= result.total_page * 1) {
+      setFinish(true);
+    }
+  };
+  const onLoad = () => {
+    console.log('iaminload');
+    fetchData();
+  };
+  const renderItem = ({item}) => {
+    return (
+      <View style={styles.item}>
+        <Text>{item.title}</Text>
       </View>
-    )
-  }
+    );
+  };
   return (
-    <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
-      {
-        !isLoading?renderItem():<Text>'loading'</Text>
-      }
-      {data.map(item => (
-        <Text key={item.id}>
-          {item.title}
-        </Text>
-      ))}
-      <Text>ListScreen</Text>
-      <Button onPress={() => navigation.goBack()} title="Go BACK" />
+    <SafeAreaView style={styles.container}>
+      <FlatList
+        data={data}
+        onEndReachedThreshold={0.1}
+        onEndReached={onLoad}
+        renderItem={renderItem}
+        keyExtractor={item => item.id}
+      />
+      {/* {data.map(item => (
+        <View style={styles.item}>
+          <Text key={item.id}>{item.title}</Text>
+        </View>
+      ))} */}
+      {/* <Button onPress={() => navigation.goBack()} title="Go BACK" />
       <Button onPress={() => navigation.push('List')} title="push List" />
-      <Button onPress={() => navigation.popToTop()} title="popToTop" />
+      <Button onPress={() => navigation.popToTop()} title="popToTop" /> */}
       <Button
         onPress={() =>
           navigation.navigate('Detail', {
@@ -60,6 +91,24 @@ export function List({navigation}) {
         }
         title="Go Detail"
       />
-    </View>
+    </SafeAreaView>
   );
-}
+};
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    marginTop: StatusBar.currentHeight || 0,
+  },
+  item: {
+    backgroundColor: '#fff',
+    elevation: 1.5,
+    borderRadius: 5,
+    padding: 10,
+    marginVertical: 8,
+    marginHorizontal: 16,
+  },
+  title: {
+    fontSize: 32,
+  },
+});
+export {List};
