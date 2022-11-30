@@ -5,6 +5,7 @@ const Stack = createNativeStackNavigator();
 import {Home} from './pages/home';
 import {List} from './pages/list';
 import {Detail} from './pages/detail';
+import ScanQRCode from './pages/ScanQRCode';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 const Tab = createBottomTabNavigator();
@@ -19,6 +20,16 @@ function ListStackScreen() {
     </ListStack.Navigator>
   );
 }
+function IndexStackScreen() {
+  return (
+    <ListStack.Navigator>
+      <ListStack.Screen name="Home">
+        {props => <Home {...props} extraData={123} />}
+      </ListStack.Screen>
+      <ListStack.Screen name="ScanQRCode" component={ScanQRCode} />
+    </ListStack.Navigator>
+  );
+}
 export default function StackRouter() {
   return (
     <Tab.Navigator
@@ -30,7 +41,7 @@ export default function StackRouter() {
         tabBarInactiveTintColor: 'gray',
         tabBarIcon: ({focused, color, size}) => {
           let iconName;
-          if (route.name === 'Home') {
+          if (route.name === 'IndexStack') {
             iconName = focused ? 'home' : 'home-outline';
           }
           if (route.name === 'ListStack') {
@@ -39,8 +50,12 @@ export default function StackRouter() {
           return <Ionicons name={iconName} size={size} color={color} />;
         },
       })}>
-      <Tab.Screen name="Home">
-        {props => <Home {...props} extraData={123} />}
+      <Tab.Screen name="IndexStack"
+        options={{
+          headerShown: false,
+        }}
+        component={IndexStackScreen}>
+        {/* {props => <Home {...props} extraData={123} />} */}
       </Tab.Screen>
       <Tab.Screen
         name="ListStack"
