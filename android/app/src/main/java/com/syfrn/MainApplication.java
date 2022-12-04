@@ -1,5 +1,6 @@
 package com.syfrn;
 
+import com.syfrn.FlashLightPackage; // <-- 引入你自己的包
 import android.app.Application;
 import android.content.Context;
 import com.facebook.react.PackageList;
@@ -28,8 +29,11 @@ public class MainApplication extends Application implements ReactApplication {
           List<ReactPackage> packages = new PackageList(this).getPackages();
           // Packages that cannot be autolinked yet can be added manually here, for example:
           // packages.add(new MyReactNativePackage());
+          packages.add(new FlashLightPackage()); // <-- 添加这一行，类名替换成你的Package类的名字 name.
           return packages;
         }
+
+
 
         @Override
         protected String getJSMainModuleName() {

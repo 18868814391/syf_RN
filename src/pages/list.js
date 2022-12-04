@@ -175,7 +175,7 @@ const List = ({navigation}) => {
       {/* <Button onPress={() => navigation.goBack()} title="Go BACK" />
       <Button onPress={() => navigation.push('List')} title="push List" />
       <Button onPress={() => navigation.popToTop()} title="popToTop" /> */}
-      <Button
+      {/* <Button
         onPress={() =>
           navigation.navigate('Detail', {
             id: 86,
@@ -183,7 +183,7 @@ const List = ({navigation}) => {
           })
         }
         title="Go Detail"
-      />
+      /> */}
     </SafeAreaView>
   );
 };
