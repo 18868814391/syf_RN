@@ -1,7 +1,20 @@
 import {Text, View, Button, StyleSheet,PermissionsAndroid,NativeModules,TouchableHighlight} from 'react-native';
+import RNDateTimePicker from '@react-native-community/datetimepicker';
+import {useState} from 'react';
 import pxToDp from '../utils/pxToDp';
 let FlashLight = NativeModules.FlashLight
 const Home = ({navigation}) => {
+  const [showClender, setShowClender] = useState(false);
+  const openClender=()=>{
+    setShowClender(!showClender)
+  }
+  const handleDateChange=(event,date)=>{
+    if(event.type === "set"){
+      setShowClender(false)
+    }else{
+      setShowClender(false)
+    }
+  }
   return (
     <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
     <TouchableHighlight onPress={async () => {
@@ -35,6 +48,23 @@ const Home = ({navigation}) => {
       })} >
       <View  style={styles.btns} title='关闭闪光灯' >
         <Text>关闭闪光灯</Text>
+      </View>      
+    </TouchableHighlight>
+    <TouchableHighlight onPress={() => openClender()} >
+      <View style={styles.btns}>
+        {
+          showClender&&(
+            <RNDateTimePicker
+            testID="dateTimePicker"
+            mode="date"
+            value={new Date()}
+            display="default"
+            onChange={(e,d)=>handleDateChange(e,d)}
+            />            
+          )
+        }
+        <Text>打开日历</Text>
+
       </View>      
     </TouchableHighlight>
     </View>
