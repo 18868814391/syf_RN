@@ -5,6 +5,7 @@ const Stack = createNativeStackNavigator();
 import {Home} from './pages/home';
 import {List} from './pages/list';
 import {Detail} from './pages/detail';
+import {BlueTeeth} from './pages/blueTeeth';
 import ScanQRCode from './pages/ScanQRCode';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -27,6 +28,7 @@ function IndexStackScreen() {
         {props => <Home {...props} extraData={123} />}
       </ListStack.Screen>
       <ListStack.Screen name="ScanQRCode" component={ScanQRCode} />
+      <ListStack.Screen name="BlueTeeth" component={BlueTeeth} />
     </ListStack.Navigator>
   );
 }
@@ -65,23 +67,5 @@ export default function StackRouter() {
         component={ListStackScreen}
       />
     </Tab.Navigator>
-    // <Stack.Navigator
-    //   screenOptions={{
-    //     headerStyle: {
-    //       backgroundColor: '#f4511e',
-    //     },
-    //     headerTintColor: '#fff',
-    //     headerTitleStyle: {
-    //       fontWeight: 'bold',
-    //     },
-    //   }}>
-    //   <Stack.Screen name="Home">
-    //     {props => <Home {...props} extraData={123} />}
-    //   </Stack.Screen>
-    //   <Stack.Screen name="List">
-    //     {props => <List {...props} extraData={'iamData'} />}
-    //   </Stack.Screen>
-    //   <Stack.Screen name="Detail" component={Detail} />
-    // </Stack.Navigator>
   );
 }

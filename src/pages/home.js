@@ -4,9 +4,16 @@ import {useState} from 'react';
 import pxToDp from '../utils/pxToDp';
 let FlashLight = NativeModules.FlashLight
 const Home = ({navigation}) => {
+  const [openFlash, setOpenFlash] = useState(true);
   const [showClender, setShowClender] = useState(false);
   const openClender=()=>{
     setShowClender(!showClender)
+  }
+  const openLight=()=>{
+    FlashLight.switchState(openFlash, () => {}, (message) => {
+      console.error(message)
+    })
+    setOpenFlash(!openFlash)
   }
   const handleDateChange=(event,date)=>{
     if(event.type === "set"){
@@ -33,38 +40,41 @@ const Home = ({navigation}) => {
       </View>      
     </TouchableHighlight>
 
-    <TouchableHighlight onPress={() => FlashLight.switchState(true, () => {
-      }, (message) => {
-        console.error(message)
-      })} >
+    <TouchableHighlight onPress={() => openLight()} >
       <View  style={styles.btns} title='打开闪光灯' >
-        <Text>打开闪光灯</Text>
+        <Text>{openFlash?'打开':'关闭'}闪光灯</Text>
       </View>      
     </TouchableHighlight>
    
-    <TouchableHighlight onPress={() => FlashLight.switchState(false, () => {
+    {/* <TouchableHighlight onPress={() => FlashLight.switchState(false, () => {
       }, (message) => {
         console.error(message)
       })} >
       <View  style={styles.btns} title='关闭闪光灯' >
         <Text>关闭闪光灯</Text>
       </View>      
-    </TouchableHighlight>
+    </TouchableHighlight> */}
     <TouchableHighlight onPress={() => openClender()} >
       <View style={styles.btns}>
         {
           showClender&&(
             <RNDateTimePicker
-            testID="dateTimePicker"
-            mode="date"
-            value={new Date()}
-            display="default"
-            onChange={(e,d)=>handleDateChange(e,d)}
+              testID="dateTimePicker"
+              mode="date"
+              value={new Date()}
+              display="default"
+              onChange={(e,d)=>handleDateChange(e,d)}
             />            
           )
         }
         <Text>打开日历</Text>
-
+      </View>      
+    </TouchableHighlight>
+    <TouchableHighlight onPress={async () => {
+        navigation.navigate('BlueTeeth')
+      }}>
+      <View  style={styles.btns} >
+        <Text>蓝牙连接</Text>
       </View>      
     </TouchableHighlight>
     </View>
