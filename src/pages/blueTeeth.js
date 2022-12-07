@@ -1,195 +1,279 @@
+import React, {FunctionComponent, useContext, useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {
-  Text,
-  View,
-  Button,
-  FlatList,
-  SafeAreaView,
-  StyleSheet,
-  StatusBar,
-  ToastAndroid,
-  TextInput,
-  NativeModules,
-  NativeEventEmitter,
-  TouchableHighlight,
-} from 'react-native';
-import BleManager from 'react-native-ble-manager';
+    View,
+    Text,
+    StyleSheet,
+    Platform,
+    PermissionsAndroid,
+    Alert,
+    NativeModules,
+    Button,
+    NativeEventEmitter, FlatList, TouchableHighlight, Linking, SafeAreaView, TouchableOpacity, ScrollView
+} from "react-native";
 
-import pxToDp from '../utils/pxToDp';
-import {useEffect, useState} from 'react';
-import {httpNet} from '../utils/request';
+import BleManager from "react-native-ble-manager";
+import pxToDp from "../utils/pxToDp";
+
+
 const BleManagerModule = NativeModules.BleManager;
 const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
-const BlueTeeth = ({navigation}) => {
-  let kw = '';
-  const [isLoading, setLoading] = useState(true);
-  const [isFinish, setFinish] = useState(false);
-  const [start_page, setPage] = useState(-1);
-  const [keyWord, setKeyWord] = useState('');
-  const [data, setData] = useState([]);
-  const [tab, setTab] = useState({});
-  BleManager.start({showAlert: false})
-  .then( ()=>{
-       //检查蓝牙打开状态，初始化蓝牙后检查当前蓝牙有没有打开
-       BleManager.checkState();
-       console.log('Init the module success.');  
-        BleManager.scan([], 5, true)
-        .then(() => {
-            console.log('Scan started');
+
+
+const BlueTeeth = (props) => {
+
+    const [isScanning, setIsScanning] = useState(false);
+    const peripherals = useRef(new Map()).current;
+    const [list, setList] = useState([]);
+    const [visible,setVisible]=useState(false)
+
+    useEffect(()=>{
+
+        const initfn=async ()=>{
+            try {
+                const result = await BleManager.start({showAlert: true});
+                console.log('result====', JSON.stringify(result))
+                if (!result) {
+                    BleManager.checkState();
+                    bleManagerEmitter.addListener('BleManagerDiscoverPeripheral', handleDiscoverPeripheral);
+                    bleManagerEmitter.addListener('BleManagerStopScan', handleStopScan);
+                    bleManagerEmitter.addListener('BleManagerConnectPeripheral',handleConnectPeripheral);
+                    bleManagerEmitter.addListener('BleManagerDisconnectPeripheral', handleDisconnectedPeripheral);
+                    bleManagerEmitter.addListener('BleManagerDidUpdateValueForCharacteristic', handleUpdateValueForCharacteristic);
+                    bleManagerEmitter.addListener("BleManagerDidUpdateState",handleDidUpdateState )
+
+                    return (() => {
+                        console.log('unmount');
+                        bleManagerEmitter.removeListener('BleManagerDiscoverPeripheral', handleDiscoverPeripheral);
+                        bleManagerEmitter.removeListener('BleManagerStopScan', handleStopScan);
+                        bleManagerEmitter.removeListener('BleManagerDisconnectPeripheral', handleDisconnectedPeripheral);
+                        bleManagerEmitter.removeListener('BleManagerDidUpdateValueForCharacteristic', handleUpdateValueForCharacteristic);
+                        bleManagerEmitter.removeListener("BleManagerDidUpdateState",handleDidUpdateState )
+                    })
+                } else {
+                  console.log('蓝牙初始化失败，请检查相关设置再重试')
+
+                }
+            }catch (e) {
+                console.log('e',e)
+            }
+        }
+
+        initfn()
+
+    },[])
+
+    const handleDiscoverPeripheral = (peripheral) => {
+        if (!peripheral.name) {
+            peripheral.name = '未知设备';
+        }
+        peripherals.set(peripheral.id, peripheral);
+        setList(Array.from(peripherals.values()));
+    }
+
+    const startScan = () => {
+        console.log('startScan')
+        if (!isScanning) {
+            BleManager.scan([], 5, false).then((results) => {
+                console.log('Scanning...',JSON.stringify(results));
+                setIsScanning(true);
+            }).catch(err => {
+              console.log('扫描出错了')
+                console.error('err',err);
+            });
+        }
+    }
+
+    const stopScan=()=>{
+        BleManager.stopScan().then(() => {
+            // Success code
+            console.log("Scan stopped");
+        }).catch(err=>{
+            console.log('err',err)
         })
-        .catch( (err)=>{
-            console.log('Scan started fail');
-        });             
-   }).catch(error=>{
-       console.log('Init the module fail.');
-   });
-   bleManagerEmitter.addListener('BleManagerDiscoverPeripheral', (data) => {
-    console.log('BleManagerDiscoverPeripheral:', data);
-    let id;  //蓝牙连接id
-    let macAddress;  //蓝牙Mac地址            
-    if(Platform.OS == 'android'){
-        macAddress = data.id;
-        id = macAddress;
-    }else{  
-        //ios连接时不需要用到Mac地址，但跨平台识别是否是同一设备时需要Mac地址
-          //如果广播携带有Mac地址，ios可通过广播0x18获取蓝牙Mac地址，
-        id = data.id;
-      }            
-  });
-  useEffect(() => {
-    setLoading(true);
-    fetchData();
-  }, []);
-  const fetchData = async () => {
-    if (isFinish) {
-      // ToastAndroid.show('没有更多了!', ToastAndroid.SHORT);
-      return false;
     }
-    let dd = start_page;
-    dd++;
-    setPage(dd);
-    ToastAndroid.show('加载中', ToastAndroid.SHORT);
-    const result = await httpNet('/upload/BlogList.php', {
-      start_page: dd,
-      pages: 25,
-    });
-    setLoading(false);
-    let listData = data.concat(result.data);
-    setData(listData);
-    if (listData.length >= result.total_page * 1) {
-      setFinish(true);
+
+    const handleStopScan = () => {
+        console.log('Scan is stopped=============xx====');
+        setIsScanning(false);
     }
-  };
-  const reFresh=()=>{
-    setFinish(false)
-    setPage(-1);
-    setData([])
-    setKeyWord('')
-    setTimeout(()=>{
-      fetchData()
-    },500)
-  };
-  const onLoad = () => {
-    fetchData();
-  };
-  const onChangeText = v => {
-    kw = v;
-    setKeyWord(v);
-  };
-  const onSearch = async d => {
+    const handleDisconnectedPeripheral = (data) => {
+        console.log('data=========',JSON.stringify(data))
+        console.log('已断开与 BLE 蓝牙设备的连接')
+        let peripheral = peripherals.get(data.peripheral);
+        if (peripheral) {
+            peripheral.connected = false;
+            peripherals.set(peripheral.id, peripheral);
+            setList(Array.from(peripherals.values()));
+        }
+        console.log('Disconnected from ' + data.peripheral);
+    }
+    const handleUpdateValueForCharacteristic = (data) => {
+        console.log('Received data from ' + data.peripheral + ' characteristic ' + data.characteristic, data.value);
+    }
+
+    const onOpenBluetooth = () => {
+        if (Platform.OS === 'ios') {
+            Linking.openURL('App-Prefs:root=Bluetooth')
+        } else {
+            BleManager.enableBluetooth().catch(() =>{})
+        }
+    }
+
+    const handleDidUpdateState=args=>{
+        console.log('handleDidUpdateState',args)
+        if(args.state==='off'){
+            Alert.alert(
+                '蓝牙未开启',
+                '需要您开启蓝牙才能使用后续功能',
+                [
+                    { text: '取消' },
+                    { text: '开启蓝牙', onPress: onOpenBluetooth }
+                ]
+            )
+            // Toast.fail('需要您开启蓝牙才能使用后续功能')
+        }else if(args.state==='on'){
+          console.log('蓝牙已开启')
+        }
+    }
+
+    const handleConnectPeripheral=args=>{
+      console.log('已连接到 BLE 蓝牙设备')
+        console.log('handleConnectPeripheral',args)
+    }
+
+    const testPeripheral = (peripheral) => {
+        console.log(peripheral)
+        if (peripheral){
+            if (peripheral.connected){
+                BleManager.disconnect(peripheral.id)
+            }else{
+                stopScan() // 连接时停止扫描
+                setTimeout(()=>{
+                  console.log('正在连接设备...')
     
-  };
-  const tabSearch = d => {
-    console.log(kw);
-    onChangeText(d);
-    onSearch(kw);
-  };
-  const renderItem = ({item}) => {
-    return (
-      <TouchableHighlight onPress={() =>
-          navigation.navigate('Detail', {
-            id: item.id,
-            otherParam: item.title,
-          })
-        }>
-        <View style={styles.item}>
-          <Text>{item.title}</Text>
-        </View>        
-      </TouchableHighlight>
-    );
-  };
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.inpBox}>
-        <TouchableHighlight onPress={() => onSearch('')}>
-          <View style={styles.btn}>
-            <Text style={styles.btnTxt}>搜索</Text>
-          </View>
-        </TouchableHighlight>
+                    BleManager.connect(peripheral.id).then(() => {
+                        let p = peripherals.get(peripheral.id);
+                        console.log('p===',p)
+                        if (p) {
+                            p.connected = true;
+                            peripherals.set(peripheral.id, p);
+                            setList(Array.from(peripherals.values()));
+                        }
+                  
+                        setTimeout(()=>{
+                            BleManager.retrieveServices(peripheral.id).then(peripheralData=>{
+      
+                                Alert.alert('成功连接设备', '需要立即查看该设备详情吗', [
+                                    { text: '下次' },
+                                    { text: '去看看' }
+                                ])
+                            })
+                        },500)
+                        console.log('Connected to ' + peripheral.id);
+                    }).catch((error) => {
+                        console.log('Connection error', error);
+                    });
+                },500)
+            }
+        }
+
+    }
+
+    const renderItem = (item) => {
+        const color = item.connected ? 'green' : '#fff';
+        return (
+            <TouchableOpacity onPress={() => testPeripheral(item) } activeOpacity={0.7}>
+                <View style={[styles.row, {backgroundColor: color}]}>
+                   <View>
+                       <Text style={styles.name}>{item.localName||item.name}</Text>
+                       <View style={styles.bView}>
+                           <Text style={styles.btext}>RSSI: {item.rssi}</Text>
+                           <Text style={styles.btext}>{item.id}</Text>
+                       </View>
+                   </View>
+                </View>
+            </TouchableOpacity>
+        );
+    }
+
+    const hideDialog=()=>{
+      setVisible(false)
+    }
+
+    const cleanAllDevices=async()=>{
+        for(let i=0;i<deviceList.length;i++){
+            try {
+                await BleManager.disconnect(deviceList[i].id)
+            }catch (e) {
+            }
+        }
+        _dispatch({
+            type:'connectedDevice/cleanAll'
+        })
+        setList([])
+        peripherals.clear()
+    }
+
+  return (<SafeAreaView style={{flex:1}}>
+      <View style={styles.header}>
+          <Button
+          title="扫描"
+              onPress={startScan}
+              style={{backgroundColor:'#1890FF',flex:1,marginHorizontal:pxToDp(2)}}
+          >
+              扫描
+          </Button>
+          <Button
+          title="停止扫描"
+              onPress={stopScan}
+              style={{backgroundColor:'#F21A1A',flex:1,marginHorizontal:pxToDp(2)}}
+          >
+              停止扫描
+          </Button>
+          {/*#46A9A8*/}
+          <Button
+          title="选项"
+              onPress={() => {setVisible(true)}}
+              style={{backgroundColor:'#46A9A8',flex:1,marginHorizontal:pxToDp(2)}}
+          >
+              选项
+          </Button>
       </View>
       <FlatList
-        data={data}
-        onEndReachedThreshold={0.1}
-        onEndReached={onLoad}
-        renderItem={renderItem}
-        keyExtractor={item => item.id}
+          extraData={list}
+          data={list}
+          renderItem={({ item }) => renderItem(item) }
+          keyExtractor={item => item.id}
+          contentContainerStyle={{paddingVertical:pxToDp(12)}}
+          style={{flex:1}}
       />
-    </SafeAreaView>
-  );
+  </SafeAreaView>);
 };
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    marginTop: StatusBar.currentHeight || 0,
-  },
-  inpBox: {
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  btn: {
-    width: pxToDp(160),
-    height: pxToDp(80),
-    padding: 10,
-    backgroundColor: '#f4511e',
-    textAlign: 'center',
-    textAlignVertical: 'center',
-  },
-  btnTxt: {
-    color: '#fff',
-    textAlign: 'center',
-  },
-  inp: {
-    width: pxToDp(500),
-    height: pxToDp(80),
-    backgroundColor: '#fff',
-    elevation: 1.5,
-    borderRadius: 5,
-    padding: 10,
-    marginVertical: 8,
-    marginHorizontal: 16,
-  },
-  tabs: {
-    padding: 10,
-    display: 'flex',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  tab: {
-    padding: 5,
-    elevation: 1.5,
-    backgroundColor: '#fff',
-    margin: 5,
-  },
-  item: {
-    backgroundColor: '#fff',
-    elevation: 1.5,
-    borderRadius: 5,
-    padding: 10,
-    marginVertical: 8,
-    marginHorizontal: 16,
-  },
-  title: {
-    fontSize: 32,
-  },
-});
+    header: {
+        backgroundColor: '#f9f9f9',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: pxToDp(5),
+    },
+    row:{
+        flexDirection: 'row',
+        alignItems:'center',
+        justifyContent:'space-between',
+        borderBottomColor:'#999',
+        borderBottomWidth:StyleSheet.hairlineWidth,
+        paddingHorizontal:pxToDp(12),
+        paddingVertical:pxToDp(15)
+    },
+    bView:{
+        flexDirection: 'row',
+        alignItems:'center',
+        marginTop:pxToDp(8)
+    },
+    name:{fontSize: pxToDp(12), textAlign: 'left', color: '#333333',fontWeight:'500'},
+    btext:{fontSize: 10, textAlign: 'left', color: '#333333',marginRight:pxToDp(12)}
+})
+
 export {BlueTeeth};
