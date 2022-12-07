@@ -8,13 +8,17 @@ import {
   StatusBar,
   ToastAndroid,
   TextInput,
+  NativeModules,
+  NativeEventEmitter,
   TouchableHighlight,
 } from 'react-native';
 import BleManager from 'react-native-ble-manager';
+
 import pxToDp from '../utils/pxToDp';
 import {useEffect, useState} from 'react';
 import {httpNet} from '../utils/request';
-
+const BleManagerModule = NativeModules.BleManager;
+const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
 const BlueTeeth = ({navigation}) => {
   let kw = '';
   const [isLoading, setLoading] = useState(true);
@@ -38,6 +42,19 @@ const BlueTeeth = ({navigation}) => {
    }).catch(error=>{
        console.log('Init the module fail.');
    });
+   bleManagerEmitter.addListener('BleManagerDiscoverPeripheral', (data) => {
+    console.log('BleManagerDiscoverPeripheral:', data);
+    let id;  //蓝牙连接id
+    let macAddress;  //蓝牙Mac地址            
+    if(Platform.OS == 'android'){
+        macAddress = data.id;
+        id = macAddress;
+    }else{  
+        //ios连接时不需要用到Mac地址，但跨平台识别是否是同一设备时需要Mac地址
+          //如果广播携带有Mac地址，ios可通过广播0x18获取蓝牙Mac地址，
+        id = data.id;
+      }            
+  });
   useEffect(() => {
     setLoading(true);
     fetchData();
