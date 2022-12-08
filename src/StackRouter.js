@@ -6,6 +6,7 @@ import {Home} from './pages/home';
 import {List} from './pages/list';
 import {Detail} from './pages/detail';
 import {BlueTeeth} from './pages/blueTeeth';
+import {BlueTeeth2} from './pages/blueTeeth2';
 import ScanQRCode from './pages/ScanQRCode';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -29,6 +30,7 @@ function IndexStackScreen() {
       </ListStack.Screen>
       <ListStack.Screen name="ScanQRCode" component={ScanQRCode} />
       <ListStack.Screen name="BlueTeeth" component={BlueTeeth} />
+      <ListStack.Screen name="BlueTeeth2" component={BlueTeeth2} />
     </ListStack.Navigator>
   );
 }

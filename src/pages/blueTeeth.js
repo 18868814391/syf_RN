@@ -66,6 +66,7 @@ const BlueTeeth = (props) => {
         if (!peripheral.name) {
             peripheral.name = '未知设备';
         }
+        console.log('发现设备：',peripheral)
         peripherals.set(peripheral.id, peripheral);
         setList(Array.from(peripherals.values()));
     }
@@ -73,8 +74,8 @@ const BlueTeeth = (props) => {
     const startScan = () => {
         console.log('startScan')
         if (!isScanning) {
-            BleManager.scan([], 5, false).then((results) => {
-                console.log('Scanning...',JSON.stringify(results));
+            BleManager.scan([], 60, false).then((results) => {
+                console.log('Scanning...',results);
                 setIsScanning(true);
             }).catch(err => {
               console.log('扫描出错了')

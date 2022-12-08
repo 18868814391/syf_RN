@@ -71,7 +71,7 @@ const Home = ({navigation}) => {
       </View>      
     </TouchableHighlight>
     <TouchableHighlight onPress={async () => {
-        navigation.navigate('BlueTeeth')
+        navigation.navigate('BlueTeeth2')
       }}>
       <View  style={styles.btns} >
         <Text>蓝牙连接</Text>
