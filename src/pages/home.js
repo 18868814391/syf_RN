@@ -70,8 +70,17 @@ const Home = ({navigation}) => {
         <Text>打开日历</Text>
       </View>      
     </TouchableHighlight>
+    {/* BlueTeeth2 */}
     <TouchableHighlight onPress={async () => {
-        navigation.navigate('BlueTeeth2')
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        );
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+          navigation.navigate('BlueTeeth2')
+        } else {
+          console.log('拒绝');
+          return
+        }
       }}>
       <View  style={styles.btns} >
         <Text>蓝牙连接</Text>
