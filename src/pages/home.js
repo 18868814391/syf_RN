@@ -76,7 +76,7 @@ const Home = ({navigation}) => {
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
         );
         if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-          navigation.navigate('BlueTeeth2')
+          navigation.navigate('BlueTeeth')
         } else {
           console.log('拒绝');
           return
